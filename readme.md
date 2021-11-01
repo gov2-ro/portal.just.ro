@@ -21,7 +21,7 @@ if instanta='all' or None, loop all instanțe then fetch dosare & ședințe filt
 
 ### v0.2
 - [ ] add relationships
-- [ ] prototype fetch ⟶ db sequence for 24h (1day)
+- [x] prototype fetch ⟶ db sequence for 24h (1day)
 
 ### v0.3 
 - [ ] commands w arguments
