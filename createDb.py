@@ -16,7 +16,8 @@ SedintaDosar
 c.execute(
     """
           CREATE TABLE "Dosar" (
-            "numar"	TEXT NOT NULL UNIQUE,
+            "xnr"	TEXT NOT NULL UNIQUE,
+            "numar"	TEXT NOT NULL,
             "Numar vechi"	TEXT,
             "data"	TEXT,
             "institutie"	TEXT,
