@@ -47,6 +47,49 @@ def qiDosarParte(ddosar, xid):
     values += "(\"" + str(xid) + "\",\"" + parti['nume'].replace('"','""') + "\",\"" + parti['calitateParte'] + "\"); "
     
   return (sqlstart + 'VALUES ' + values)
+
+def qiDosarSedinta(ddosar, xid): 
+  values = ''
+  sqlstart = 'INSERT INTO DosarSedinta (xnumardosar, complet, data, ora, soluţie, soluţieSumar, dataPronuntare, documentSedinta, numarDocument, dataDocument) '
+
+  sedinte = ddosar['sedinte']['DosarSedinta']
+
+  if type(sedinte) is list:
+    # mai multe părți:
+    for osedinta in sedinte:
+      osedinta['documentSedinta'] = 'xx'
+      if (osedinta['numarDocument'] is None):
+        osedinta['numarDocument'] = 'xx'
+      if (osedinta['solutie'] is None):
+        osedinta['solutie'] = 'xx'
+      if (osedinta['solutieSumar'] is None):
+        osedinta['solutieSumar'] = 'xx'
+      try:
+        values += "(\"" + str(xid) + "\",\"" +  osedinta['complet'] + "\",\"" + osedinta['data'] + "\",\"" + osedinta['ora'] + "\",\"" + osedinta['solutie'] + "\",\"" + osedinta['solutieSumar'] + "\",\"" + osedinta['dataPronuntare'] + "\",\"" + osedinta['documentSedinta'] + "\",\"" + osedinta['numarDocument'] + "\",\"" + osedinta['dataDocument'] + "\"), "
+      except:
+        print('-err: no sedinte')
+        print(ddosar['sedinte'])
+        breakpoint()
+    values = values[:-2] + ';'
+  else:
+    # o singură parte:
+    # FIXME:
+    if not isinstance(sedinte['dataPronuntare'], str):
+      sedinte['dataPronuntare'] = 'rr'
+    if sedinte['numarDocument'] is None:
+      sedinte['numarDocument'] = ''
+    if sedinte['solutie'] is None:
+      sedinte['solutie'] = ''
+    if sedinte['solutieSumar'] is None:
+      sedinte['solutieSumar'] = ''
+
+    try:  
+      values += "(\"" + str(xid) + "\",\"" +   sedinte['complet'] + "\",\"" + sedinte['data'] + "\",\"" + sedinte['ora'] + "\",\"" + sedinte['solutie'] + "\",\"" + sedinte['solutieSumar'] + "\",\"" + sedinte['dataPronuntare'] + "\",\"" + sedinte['documentSedinta'] + "\",\"" + sedinte['numarDocument'] + "\",\"" + sedinte['dataDocument'] + "\"); "
+    except:
+      print('--err values osedinta')
+      breakpoint()
+    
+  return (sqlstart + 'VALUES ' + values)
  
 def xmltodb(inputxmlz, xdbfile):
   conn = sqlite3.connect(xdbfile)
@@ -72,19 +115,28 @@ def xmltodb(inputxmlz, xdbfile):
  
     # TODO: add relational tables: parti, sedinte, caiatac
     # write dosar, DosarParte, DosarSedinta, DosarCaleAtac 
- 
+  
     sqlDosar = qiDosar(dosar, xnr)
     try:
       cursor.execute(sqlDosar)
     except sqlite3.Error as err:
         print('--err sqlDosar Query Failed: %s\nError: %s' % (sqlDosar, str(err)))
         breakpoint()
+
     if 'parti' in dosar:
       sqlDosarParte = qiDosarParte(dosar, xnr)
       try:
         cursor.execute(sqlDosarParte)
       except sqlite3.Error as err:
           print('--err sqlDosarParte Query Failed: %s\nError: %s' % (sqlDosarParte, str(err)))
+          breakpoint()
+    
+    if 'sedinte' in dosar:
+      sqlDosarSedinta = qiDosarSedinta(dosar, xnr)
+      try:
+        cursor.execute(sqlDosarSedinta)
+      except sqlite3.Error as err:
+          print('--err sqlDosarSedinta Query Failed: %s\nError: %s' % (sqlDosarSedinta, str(err)))
           breakpoint()
       
   conn.commit()

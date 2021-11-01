@@ -20,7 +20,13 @@ if instanta='all' or None, loop all instanțe then fetch dosare & ședințe filt
 - [x] local xml ⟶ sqlite prototype
 
 ### v0.2
-- [ ] add relationships
+- [ ] add relationships (Dosar)
+  - [x] DosarParte
+  - [ ] DosarSedinta
+  - [ ] DosarCaleAtac
+- [ ] sedinte
+  - [ ] Sedinta
+  - [ ] SedintaDosar
 - [x] prototype fetch ⟶ db sequence for 24h (1day)
 
 ### v0.3 
