@@ -1,6 +1,10 @@
-import sqlite3
+import sqlite3, os
 
 dbfile = "data/portal-just.db"
+
+# clean-up first
+# remove previous
+os.remove(dbfile)
 
 conn = sqlite3.connect(dbfile)
 c = conn.cursor()

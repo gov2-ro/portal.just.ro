@@ -48,6 +48,8 @@ def api2xml(target, body):
 
 dates = ['2021-05-28', '2021-05-29', '2021-05-30']
 
+# TODO: if file xml exists don't fetch!
+
 for oneday in dates:
   filename=oneday
   print('>> fetching Dosare date: ' + oneday + ' ...')
