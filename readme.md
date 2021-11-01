@@ -20,14 +20,16 @@ if instanta='all' or None, loop all instanțe then fetch dosare & ședințe filt
 - [x] local xml ⟶ sqlite prototype
 
 ### v0.2
+- [x] prototype fetch ⟶ db sequence for 24h (1day)
 - [ ] add relationships (Dosar)
   - [x] DosarParte
   - [ ] DosarSedinta
   - [ ] DosarCaleAtac
+
+#### v0.25
 - [ ] sedinte
   - [ ] Sedinta
   - [ ] SedintaDosar
-- [x] prototype fetch ⟶ db sequence for 24h (1day)
 
 ### v0.3 
 - [ ] commands w arguments
@@ -38,6 +40,9 @@ if instanta='all' or None, loop all instanțe then fetch dosare & ședințe filt
 - [ ] check for fetch errors
 - [ ] check dupes?
 - [ ] cron
+
+#### v0.45
+- [ ] Datasette template + dashboards
 
 ### v0.5
 - [ ] nosql db

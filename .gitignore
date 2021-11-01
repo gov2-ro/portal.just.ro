@@ -5,4 +5,6 @@
 _obsolete
 !/data/reference/
 !/data/cached-responses/
+!/data/datasette/
+
 /data/cached-responses/*
