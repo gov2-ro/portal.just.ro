@@ -51,10 +51,5 @@ for dosar in dosare:
   # breakpoint()
   cursor.execute(sqlq)
 
-
 conn.commit()
-
-print('done')
-# with open(outputjson, 'w') as outfile:
-#      json.dump(zz, outfile, sort_keys = True, indent = 4,
-#                ensure_ascii = False)
+print('done') 
