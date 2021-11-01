@@ -4,3 +4,5 @@
 */_obsolete
 _obsolete
 !/data/reference/
+!/data/cached-responses/
+/data/cached-responses/*
