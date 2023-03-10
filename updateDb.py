@@ -12,6 +12,8 @@ csvinstante ="data/reference/instante.csv"
 dir_xmlgz = 'data/cached-responses/xmlgz/'
 dir_parsed = 'data/cached-responses/parsed/'
 
+debugging = False
+
 instante = pd.read_csv (csvinstante)
 
 def qiDosar(ddosar, xid): 
@@ -23,7 +25,8 @@ def qiDosar(ddosar, xid):
     sqlq = "INSERT INTO Dosar (xnr, numar, \"Numar vechi\", data, institutie, categorieCaz, stadiuProcesual, parti, sedinte, caiAtac) VALUES (\"" + str(xid) + "\",\"" + str(xid) + "\",\"" + str(xid) + "\",\"" + ddosar['data'] + "\",\"" + ddosar['institutie'] + "\",\"" + ddosar['categorieCaz'] + "\",\"" + ddosar['stadiuProcesual'] + "\",\"" + '[listă]' + "\",\"" + '[listă]' + "\",\"" + '[listă]' +  "\")"
   except:
     print('err: qiDosar no sqlq')
-    breakpoint()
+    if debugging:
+      breakpoint()
   return sqlq
  
 def qiDosarParte(ddosar, xid): 
@@ -40,7 +43,8 @@ def qiDosarParte(ddosar, xid):
       except:
         print('no parti')
         print(ddosar['parti'])
-        breakpoint()
+        if debugging:
+          breakpoint()
     values = values[:-2] + ';'
   else:
     # o singură parte:  
@@ -69,7 +73,8 @@ def qiDosarSedinta(ddosar, xid):
       except:
         print('-err: no sedinte')
         print(ddosar['sedinte'])
-        breakpoint()
+        if debugging:
+          breakpoint()
     values = values[:-2] + ';'
   else:
     # o singură parte:
@@ -87,7 +92,8 @@ def qiDosarSedinta(ddosar, xid):
       values += "(\"" + str(xid) + "\",\"" +   sedinte['complet'] + "\",\"" + sedinte['data'] + "\",\"" + sedinte['ora'] + "\",\"" + sedinte['solutie'] + "\",\"" + sedinte['solutieSumar'] + "\",\"" + sedinte['dataPronuntare'] + "\",\"" + sedinte['documentSedinta'] + "\",\"" + sedinte['numarDocument'] + "\",\"" + sedinte['dataDocument'] + "\"); "
     except:
       print('--err values osedinta')
-      breakpoint()
+      if debugging:
+        breakpoint()
     
   return (sqlstart + 'VALUES ' + values)
  
@@ -111,7 +117,8 @@ def xmltodb(inputxmlz, xdbfile):
       xnr = znr.iloc[0] #gets data from df
     except:
       print('ERR: failed at xnr zrn')
-      breakpoint()
+      if debugging:
+        breakpoint()
  
     # TODO: add relational tables: parti, sedinte, caiatac
     # write dosar, DosarParte, DosarSedinta, DosarCaleAtac 
@@ -121,7 +128,8 @@ def xmltodb(inputxmlz, xdbfile):
       cursor.execute(sqlDosar)
     except sqlite3.Error as err:
         print('--err sqlDosar Query Failed: %s\nError: %s' % (sqlDosar, str(err)))
-        breakpoint()
+        if debugging:
+          breakpoint()
 
     if 'parti' in dosar:
       sqlDosarParte = qiDosarParte(dosar, xnr)
@@ -129,7 +137,8 @@ def xmltodb(inputxmlz, xdbfile):
         cursor.execute(sqlDosarParte)
       except sqlite3.Error as err:
           print('--err sqlDosarParte Query Failed: %s\nError: %s' % (sqlDosarParte, str(err)))
-          breakpoint()
+          if debugging:
+            breakpoint()
     
     if 'sedinte' in dosar:
       sqlDosarSedinta = qiDosarSedinta(dosar, xnr)
@@ -137,7 +146,8 @@ def xmltodb(inputxmlz, xdbfile):
         cursor.execute(sqlDosarSedinta)
       except sqlite3.Error as err:
           print('--err sqlDosarSedinta Query Failed: %s\nError: %s' % (sqlDosarSedinta, str(err)))
-          breakpoint()
+          if debugging:
+            breakpoint()
       
   conn.commit()
   print('witten: ' + inputxmlz) 

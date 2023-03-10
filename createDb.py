@@ -3,8 +3,13 @@ import sqlite3, os
 dbfile = "data/portal-just.db"
 
 # clean-up first
-# remove previous
-os.remove(dbfile)
+# remove previous dbfile if exists
+
+try:
+    os.remove(dbfile)
+    print(f"{dbfile} removed successfully")
+except FileNotFoundError:
+    print(f"{dbfile} does not exist")
 
 conn = sqlite3.connect(dbfile)
 c = conn.cursor()
