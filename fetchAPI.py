@@ -5,7 +5,7 @@ import datetime
 import random, time
 import xml.etree.ElementTree as ET
 
-start_date = datetime.date(1964, 1, 1)
+start_date = datetime.date(1960, 1, 1)
 end_date = datetime.date(2023, 3, 1)
 
 dir_responsexml = 'data/cached-responses/xml/'
@@ -65,25 +65,20 @@ def api2xml(zidate, body):
     os.makedirs(dir_responsexml + year + '/' + month)
     time.sleep(random.randint(0, 3))
 
-  with open(dir_responsexml + year + '/' + month + '/' + zidate + '_dosare.xml', "w") as text_file:
+  with open(dir_responsexml + year + '/' + month + '/' + zidate + ' ' + str(nrdosare) + ' dosare.xml', "w") as text_file:
       text_file.write(ztring)
-  print('- saved: ' + dir_responsexml + year + '/' + month + zidate + '_dosare.xml')
+  print('>> ' + dir_responsexml + year + '/' + month + zidate + '_dosare.xml')
 
-  with gzip.open(dir_responsexmlgz + zidate + '_dosare.xml.gz', 'wt') as f:
-    f.write(ztring)
-  print('- saved: ' + dir_responsexmlgz + zidate + '_dosare.xml.gz')
+  # with gzip.open(dir_responsexmlgz + year + '/' + zidate + '_dosare.xml.gz', 'wt') as f:
+  #   f.write(ztring)
+  # print('- saved: ' + dir_responsexmlgz + zidate + '_dosare.xml.gz')
 
-# TODO: this should happen in external script
+# TODO: this should happen in external script - or not.
 
 # dates = ['2022-02-10', '2023-01-11', '2023-02-12']
 
-
-
-
-# initialize an empty list to store dates
-dates = []
-
 # loop over all dates between start and end dates
+dates = []
 current_date = start_date
 while current_date <= end_date:
     # append current date to list in yyyy-mm-dd format
@@ -98,5 +93,6 @@ for oneday in dates:
   filename=oneday
   # print('>> fetching Dosare date: ' + oneday + ' ...')
   api2xml(oneday, cautaDosarXMLQ(oneday))
-  print('-- fetched Dosare date: ' + oneday)
+  # print('-- fetched Dosare date: ' + oneday)
+  print('-- ' + oneday)
   # time.sleep(random.randint(0, 3))
