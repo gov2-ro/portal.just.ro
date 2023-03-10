@@ -3,8 +3,11 @@ import gzip
 import os
 import datetime
 import random, time
+import xml.etree.ElementTree as ET
 
-yyear = 1989
+start_date = datetime.date(1964, 1, 1)
+end_date = datetime.date(2023, 3, 1)
+
 dir_responsexml = 'data/cached-responses/xml/'
 dir_responsexmlgz = 'data/cached-responses/xmlgz/'
 url="http://portalquery.just.ro/Query.asmx?WSDL"
@@ -33,18 +36,31 @@ def cautaDosarXMLQ(date, *opts):
   </soap12:Envelope>
   """.format(dataStart = dateStart, dataStop = dateEnd)
   # print(qbody)
-  # breakpoint()
+  # breakpoint()()
   return qbody
 
 def api2xml(zidate, body):
   response = requests.post(url,data=body,headers=headers)
   ztring = response.content.decode("utf-8")
+  
+  # convert to xml obj to count nr of dosare?
+  xtree = ET.ElementTree(ET.fromstring(ztring))
+  root = xtree.getroot()
+  nrdosare = 0
+  for dosar in root.findall('.//{portalquery.just.ro}Dosar'):
+    nrdosare += 1
+
+  if nrdosare == 0:
+    return None
+
+
   iyear, imonth = map(int, zidate.split('-')[0:2])
   year = str(iyear)
   month = str(imonth)
 
   if not os.path.exists(dir_responsexml + year):
     os.makedirs(dir_responsexml + year)
+    time.sleep(random.randint(0, 7))
   if not os.path.exists(dir_responsexml + year + '/' + month):
     os.makedirs(dir_responsexml + year + '/' + month)
     time.sleep(random.randint(0, 3))
@@ -62,22 +78,23 @@ def api2xml(zidate, body):
 # dates = ['2022-02-10', '2023-01-11', '2023-02-12']
 
 
-# loop al dates in yyear
-date = datetime.date(yyear, 1, 1)
-# create a list to store the dates
-dates_year = []
-# loop over all days in 2022
-while date.year == yyear:
-    # add the formatted date to the list
-    dates_year.append(date.strftime('%Y-%m-%d'))
-    # increment the date by one day
-    date += datetime.timedelta(days=1)
 
+
+# initialize an empty list to store dates
+dates = []
+
+# loop over all dates between start and end dates
+current_date = start_date
+while current_date <= end_date:
+    # append current date to list in yyyy-mm-dd format
+    dates.append(current_date.strftime('%Y-%m-%d'))
+    # increment current date by 1 day
+    current_date += datetime.timedelta(days=1)
 
 
 # TODO: if file xml exists don't fetch!
 
-for oneday in dates_year:
+for oneday in dates:
   filename=oneday
   # print('>> fetching Dosare date: ' + oneday + ' ...')
   api2xml(oneday, cautaDosarXMLQ(oneday))
