@@ -17,9 +17,17 @@ debugging = False
 instante = pd.read_csv (csvinstante)
 
 def qiDosar(ddosar, xid): 
-
-  if not ddosar['numarVechi']:
+  # breakpoint()
+  if 'numarVechi' not in ddosar or not ddosar['numarVechi']:
     ddosar['numarVechi'] = ''
+  if not ddosar['data']:
+    ddosar['data'] = ''
+  if not ddosar['institutie']:
+    ddosar['institutie'] = ''
+  if not ddosar['categorieCaz']:
+    ddosar['categorieCaz'] = ''
+  if not ddosar['stadiuProcesual']:
+    ddosar['stadiuProcesual'] = ''
 
   try:
     sqlq = "INSERT INTO Dosar (xnr, numar, \"Numar vechi\", data, institutie, categorieCaz, stadiuProcesual, parti, sedinte, caiAtac) VALUES (\"" + str(xid) + "\",\"" + str(xid) + "\",\"" + str(xid) + "\",\"" + ddosar['data'] + "\",\"" + ddosar['institutie'] + "\",\"" + ddosar['categorieCaz'] + "\",\"" + ddosar['stadiuProcesual'] + "\",\"" + '[listă]' + "\",\"" + '[listă]' + "\",\"" + '[listă]' +  "\")"
@@ -42,7 +50,7 @@ def qiDosarParte(ddosar, xid):
         values += "(\"" + str(xid) + "\",\"" + oparte['nume'].replace('"','""') + "\",\"" + oparte['calitateParte'] + "\"), "
       except:
         print('no parti')
-        print(ddosar['parti'])
+        # print(ddosar['parti'])
         if debugging:
           breakpoint()
     values = values[:-2] + ';'
@@ -72,7 +80,7 @@ def qiDosarSedinta(ddosar, xid):
         values += "(\"" + str(xid) + "\",\"" +  osedinta['complet'] + "\",\"" + osedinta['data'] + "\",\"" + osedinta['ora'] + "\",\"" + osedinta['solutie'] + "\",\"" + osedinta['solutieSumar'] + "\",\"" + osedinta['dataPronuntare'] + "\",\"" + osedinta['documentSedinta'] + "\",\"" + osedinta['numarDocument'] + "\",\"" + osedinta['dataDocument'] + "\"), "
       except:
         print('-err: no sedinte')
-        print(ddosar['sedinte'])
+        # print(ddosar['sedinte'])
         if debugging:
           breakpoint()
     values = values[:-2] + ';'
@@ -103,9 +111,21 @@ def xmltodb(inputxmlz, xdbfile):
   zz = xmltodict.parse(gzip.GzipFile(inputxmlz))
   # print(json.dumps(zz))
   zecsv=[]
+  # breakpoint()
+  
+  #FIXME: check if ["CautareDosareResult"]['Dosar'] exist
   dosare = zz["soap:Envelope"]['soap:Body']["CautareDosareResponse"]["CautareDosareResult"]['Dosar']
   for dosar in dosare:
-    instanta = instante.loc[instante['api-slug'] == dosar['institutie']]
+    
+  
+    if 'institutie' in dosar:
+      # print(dosar['institutie'])
+      instanta = instante.loc[instante['api-slug'] == dosar['institutie']]
+    else:
+      # print('wtf')
+      # breakpoint()
+      instanta = 'xx-zz'
+    
 
     try:
       linkpjr = str(int(float(instanta['link just-ro'])))
@@ -117,6 +137,10 @@ def xmltodb(inputxmlz, xdbfile):
       xnr = znr.iloc[0] #gets data from df
     except:
       print('ERR: failed at xnr zrn')
+      xnr = 'xx-zz'
+      znr = 'yy-zz'
+      return None
+
       if debugging:
         breakpoint()
  
