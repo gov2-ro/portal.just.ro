@@ -6,6 +6,7 @@ import pandas as pd
 import sqlite3
 import glob, os
 import pandas as pd
+import logging
 
 dbfile = "data/portal-just.db"
 csvinstante ="data/reference/instante.csv"
@@ -15,6 +16,8 @@ dir_parsed = 'data/cached-responses/parsed/'
 debugging = False
 
 instante = pd.read_csv (csvinstante)
+
+#TODO: add logging and error logging
 
 def qiDosar(ddosar, xid): 
   # breakpoint()
@@ -29,115 +32,142 @@ def qiDosar(ddosar, xid):
   if not ddosar['stadiuProcesual']:
     ddosar['stadiuProcesual'] = ''
 
-  # try:
-  #   parti = json.dumps(ddosar['parti']['DosarParte'])
-  # except:
-  #   parti = ''
-  
-  # try:
-  #   sedinte = json.dumps(ddosar['sedinte']['DosarSedinta'])
-  # except:
-  #   sedinte = ''
-  
-  # try:
-  #   caiAtac = json.dumps(ddosar['caiAtac']['DosarCaleAtac'])
-  # except:
-  #   caiAtac = ''
-  
-  # try:
-
-  #   # sqlq = "INSERT INTO Dosar (xnr, numar, \"Numar vechi\", data, institutie, categorieCaz, stadiuProcesual, parti, sedinte, caiAtac) VALUES (\"" + str(xid) + "\",\"" + ddosar['numar'] + "\",\"" + ddosar['numarVechi'] + "\",\"" + ddosar['data'] + "\",\"" + ddosar['institutie'] + "\",\"" + ddosar['categorieCaz'] + "\",\"" + ddosar['stadiuProcesual'] + "\",\"" + parti + "\",\"" + sedinte + "\",\"" + caiAtac +  "\")"
-  #   # sqlq = "INSERT INTO Dosar (xnr, numar, \"Numar vechi\", data, institutie, categorieCaz, stadiuProcesual) VALUES (\"" + str(xid) + "\",\"" + ddosar['numar'] + "\",\"" + ddosar['numarVechi'] + "\",\"" + ddosar['data'] + "\",\"" + ddosar['institutie'] + "\",\"" + ddosar['categorieCaz'] + "\",\"" + ddosar['stadiuProcesual'] + "\")"
-  fields = ('xnr', 'numar', '\"Numar vechi\"', 'data', 'institutie', 'categorieCaz', 'stadiuProcesual', 'parti', 'sedinte', 'caiAtac')
-  sqlTemplate = "INSERT INTO Dosar (xnr, numar, \"Numar vechi\", data, institutie, categorieCaz, stadiuProcesual) VALUES (?, ?, ?, ?, ?, ?, ?)"
-  data = (str(xid), ddosar['numar'], ddosar['numarVechi'], ddosar['data'], ddosar['institutie'], ddosar['categorieCaz'], ddosar['stadiuProcesual'])
-    
-  # except:
-  #   print('err: qiDosar no sqlq')
-  #   if debugging:
-  #     breakpoint()
-  
-  return {"sqlTemplate": sqlTemplate, "values": data}
+  try:
+    sqlq = "INSERT INTO Dosar (xnr, numar, \"Numar vechi\", data, institutie, categorieCaz, stadiuProcesual) VALUES (\"" + xid + "\",\"" + ddosar['numar'] + "\",\"" + ddosar['numarVechi'] + "\",\"" + ddosar['data'] + "\",\"" + ddosar['institutie'] + "\",\"" + ddosar['categorieCaz'] + "\",\"" + ddosar['stadiuProcesual'] + "\")"
+  except:
+    print('err: qiDosar no sqlq')
+    if debugging:
+      breakpoint()
+  return sqlq
  
+
 def qiDosarParte(ddosar, xid): 
-  values = ()
-  fields = ('xnumardosar', 'nume', 'calitateParte')
-  sqlTemplate = 'INSERT INTO DosarParte (xnumardosar, nume, calitateParte) VALUES (?, ?, ?)'
+  values = ''
+  sqlstart = 'INSERT INTO DosarParte (xnumardosar, nume, calitateParte) '
+
   parti = ddosar['parti']['DosarParte']
 
   if type(parti) is list:
     # mai multe părți:
     for oparte in parti:
       try:
-        # values += "(\"" + str(xid) + "\",\"" + oparte['nume'].replace('"','""') + "\",\"" + oparte['calitateParte'] + "\"), "
-        values += (xid, parti['nume'].replace('"','""').replace("'", "\\'"), parti['calitateParte'])
+        values += "(\"" + str(xid) + "\",\"" + oparte['nume'].replace('"','""') + "\",\"" + oparte['calitateParte'] + "\"), "
       except:
         print('no parti')
         # print(ddosar['parti'])
         if debugging:
           breakpoint()
-    # values = values[:-2] + ';'
+    values = values[:-2] + ';'
   else:
     # o singură parte:  
-    # values += "(\"" + str(xid) + "\",\"" + parti['nume'].replace('"','""') + "\",\"" + parti['calitateParte'] + "\"); "
-    # values += (xid, parti['nume'].replace('"','""').replace("'", "\\'"), parti['calitateParte'])
-    values += (xid, parti['nume'].replace("'", "\\'"), parti['calitateParte'])
+    values += "(\"" + str(xid) + "\",\"" + parti['nume'].replace('"','""') + "\",\"" + parti['calitateParte'] + "\"); "
     
-  # return {"fields": fields, "values": values}
-  return {"sqlTemplate": sqlTemplate, "values": values}
+  return (sqlstart + 'VALUES ' + values)
 
-def qiDosarSedinta(ddosar, xid): 
-  values = ()
-  # fields = ('xnumardosar', 'complet', 'data', 'ora', 'soluţie', 'soluţieSumar', 'dataPronuntare', 'documentSedinta', 'numarDocument', 'dataDocument')
-  sqlTemplate = 'INSERT INTO DosarSedinta (xnumardosar, complet, data, ora, soluţie, soluţieSumar, dataPronuntare, documentSedinta, numarDocument, dataDocument) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+
+def qiDosarSedinta(ddosar, xid, fisier): 
+  values = ''
+  sqlstart = 'INSERT INTO DosarSedinta (xnumardosar, complet, data, ora, soluţie, soluţieSumar, dataPronuntare, documentSedinta, numarDocument, dataDocument) '
+
   sedinte = ddosar['sedinte']['DosarSedinta']
 
   if type(sedinte) is list:
     # mai multe părți:
     for osedinta in sedinte:
-      osedinta['documentSedinta'] = 'xx'
+      if (osedinta['complet'] is None):
+        osedinta['complet'] = ''
+      if (osedinta['documentSedinta'] is None):
+        osedinta['documentSedinta'] = 'xx'
       if (osedinta['numarDocument'] is None):
-        osedinta['numarDocument'] = ''
+        osedinta['numarDocument'] = 'xx'
       if (osedinta['solutie'] is None):
-        osedinta['solutie'] = ''
+        osedinta['solutie'] = 'xx'
       if (osedinta['solutieSumar'] is None):
-        osedinta['solutieSumar'] = ''
+        osedinta['solutieSumar'] = 'xx'
+      if isinstance(osedinta['dataDocument'] , dict):
+        osedinta['dataDocument'] = '-na-NIL'
+      if isinstance(osedinta['dataPronuntare'] , dict):
+        osedinta['dataPronuntare'] = '-na-NIL'
+      if isinstance(osedinta['documentSedinta'] , dict):
+        osedinta['documentSedinta'] = '-na-NIL'
       try:
-        values += (xid,  osedinta['complet'], osedinta['data'], osedinta['ora'], osedinta['solutie'], osedinta['solutieSumar'].replace("'", "\\'"), osedinta['dataPronuntare'], osedinta['documentSedinta'], osedinta['numarDocument'], osedinta['dataDocument'])
-      except:
-        print('err 101: no sedinte ' + xid)
+        values += "(\"" + str(xid) + "\",\"" +  osedinta['complet'] + "\",\"" + osedinta['data'] + "\",\"" + osedinta['ora'] + "\",\"" + osedinta['solutie'].replace('"','""') + "\",\"" + osedinta['solutieSumar'].replace('"','""') + "\",\"" + osedinta['dataPronuntare'] + "\",\"" + osedinta['documentSedinta'] + "\",\"" + osedinta['numarDocument'] + "\",\"" + osedinta['dataDocument'] + "\"), "
+      except Exception as e:
+        print('warning 84: no sedinte ' + xid + ' ' + fisier + ' :: ' +str(e))
+        breakpoint()
         # print(ddosar['sedinte'])
         if debugging:
           breakpoint()
-    # values = values[:-2] + ';'
+    values = values[:-2] + ';'
   else:
     # o singură parte:
     # FIXME:
     if not isinstance(sedinte['dataPronuntare'], str):
-      sedinte['dataPronuntare'] = 'rr'
+      sedinte['dataPronuntare'] = '-na-'
     if sedinte['numarDocument'] is None:
-      sedinte['numarDocument'] = ''
+      sedinte['numarDocument'] = '-na-'
+    if sedinte['complet'] is None:
+      sedinte['complet'] = '-na-'
     if sedinte['solutie'] is None:
-      sedinte['solutie'] = ''
+      sedinte['solutie'] = '-na-'
     if sedinte['solutieSumar'] is None:
-      sedinte['solutieSumar'] = ''
-
+      sedinte['solutieSumar'] = '-na-'
+    if isinstance(sedinte['dataDocument'] , dict):
+        sedinte['dataDocument'] = '-na-NIL'
+    if isinstance(sedinte['dataPronuntare'] , dict):
+        sedinte['dataPronuntare'] = '-na-NIL'
+    if isinstance(sedinte['documentSedinta'] , dict):
+        sedinte['documentSedinta'] = '-na-NIL'
     try:  
-      values += (xid ,   sedinte['complet'] , sedinte['data'] , sedinte['ora'] , sedinte['solutie'] , sedinte['solutieSumar'] , sedinte['dataPronuntare'] , sedinte['documentSedinta'] , sedinte['numarDocument'] , sedinte['dataDocument'])
-    except:
-      print('--err values osedinta')
+      values += "(\"" + str(xid) + "\",\"" +   sedinte['complet'] + "\",\"" + sedinte['data'] + "\",\"" + sedinte['ora'] + "\",\"" + sedinte['solutie'] + "\",\"" + sedinte['solutieSumar'] + "\",\"" + sedinte['dataPronuntare'] + "\",\"" + sedinte['documentSedinta'] + "\",\"" + sedinte['numarDocument'] + "\",\"" + sedinte['dataDocument'] + "\"); "
+    except Exception as e:
+      print('err 118 values osedinta: ' + str(e))
+      breakpoint()
+
       if debugging:
         breakpoint()
+  if not values:
+    return None  
+  else:
+    return (sqlstart + 'VALUES ' + values)
+
+
+def qiDosarCaiAtac(ddosar, xid, fisier):
+  values = ''
+  sqlstart = 'INSERT INTO DosarCaleAtac (xnumardosar, dataDeclarare, parteDeclaratoare, tipCaleAtac) '
+  caleAtac = ddosar['caiAtac']['DosarCaleAtac']
+  if type(caleAtac) is list:
+  # mai multe părți:
+    for oCale in caleAtac:
+      try:
+        values += "(\"" + str(xid) + "\",\"" + oCale['dataDeclarare'] + "\",\"" + oCale['parteDeclaratoare'].replace('"','""') + "\",\"" + oCale['tipCaleAtac'] + "\"), "
+      except:
+        print('warning 143 no caleAtac ' + xid + ' --> ' + fisier)
+        # print(ddosar['caleAtac'])
+        if debugging:
+          breakpoint()
+    values = values[:-2] + ';'
+  else:
+    # o singură parte:  
+    if caleAtac['parteDeclaratoare'] is None:
+      caleAtac['parteDeclaratoare'] = '-na-'
+    try:
+      values += "(\"" + str(xid) + "\",\"" + caleAtac['dataDeclarare'] + "\",\"" + caleAtac['parteDeclaratoare'].replace('"','""') + "\",\"" + caleAtac['tipCaleAtac'] + "\"); "
+    except Exception as e:
+      print('err 154: căi atac ' + xid + ' ' + fisier + ' :: ' +str(e))
+      breakpoint()
     
-  return {"sqlTemplate": sqlTemplate, "values": values}
- 
+  return (sqlstart + 'VALUES ' + values)
+
+
+
 def xmltodb(inputxmlz, xdbfile):
   conn = sqlite3.connect(xdbfile)
   cursor = conn.cursor()
-  try:
+  try:  
     zz = xmltodict.parse(gzip.GzipFile(inputxmlz))
   except:
-    print('ERR 114: ' + inputxmlz)
+    print('err 129 xmltodict.parse(gzip.GzipFile' + inputxmlz)
     return None
   # print(json.dumps(zz))
   zecsv=[]
@@ -147,13 +177,15 @@ def xmltodb(inputxmlz, xdbfile):
   dosare = zz["soap:Envelope"]['soap:Body']["CautareDosareResponse"]["CautareDosareResult"]['Dosar']
   for dosar in dosare:
     
+  
     if 'institutie' in dosar:
       # print(dosar['institutie'])
       instanta = instante.loc[instante['api-slug'] == dosar['institutie']]
     else:
       # print('wtf')
       # breakpoint()
-      instanta = '-na-'
+      instanta = 'xx-zz'
+    
 
     try:
       linkpjr = str(int(float(instanta['link just-ro'])))
@@ -163,10 +195,10 @@ def xmltodb(inputxmlz, xdbfile):
     try:
       znr = instanta['tip']+'-'+linkpjr+'_'+dosar['numar']
       xnr = znr.iloc[0] #gets data from df
-    except:
-      print('ERR 143: failed at xnr zrn' + inputxmlz)
-      xnr = 'xx-zz'
-      znr = 'yy-zz'
+    except Exception as e:
+      print('ERR 141: failed at xnr zrn ' + inputxmlz + ' --> '+ str(e))
+      xnr = '?'
+      znr = '?'
       return None
 
       if debugging:
@@ -175,37 +207,45 @@ def xmltodb(inputxmlz, xdbfile):
     # TODO: add relational tables: parti, sedinte, caiatac
     # write dosar, DosarParte, DosarSedinta, DosarCaleAtac 
   
-    xsql = qiDosar(dosar, xnr)
+    sqlDosar = qiDosar(dosar, xnr)
+
     try:
-      cursor.execute(xsql['sqlTemplate'], xsql['values'])
+      cursor.execute(sqlDosar)
     except sqlite3.Error as err:
-        print('Err 158 ' + inputxmlz + 'sqlDosar Query Failed: %s\nError: %s' % (xsql['values'], str(err)))
-        breakpoint()
+        print('err 158 sqlDosar Query Failed: %s\nError: %s' % (sqlDosar, str(err)))
         if debugging:
           breakpoint()
 
     if 'parti' in dosar:
-      xsqlDosarParte = qiDosarParte(dosar, xnr)
+      sqlDosarParte = qiDosarParte(dosar, xnr)
       try:
-        cursor.execute(xsqlDosarParte['sqlTemplate'], xsqlDosarParte['values'])
+        cursor.execute(sqlDosarParte)
       except sqlite3.Error as err:
-          print('err 167 ' + inputxmlz + ' sqlDosarParte Query Failed: %s\nError: %s' % (xsqlDosarParte['values'], str(err)))
-          breakpoint()
+          print('err 223 sqlDosarParte Query Failed: %s\nError: %s' % (sqlDosarParte, str(err)) + ' --> ' + inputxmlz)
           if debugging:
             breakpoint()
     
     if 'sedinte' in dosar:
-      xsqlDosarSedinta = qiDosarSedinta(dosar, xnr)
-      try:
-        cursor.execute(xsqlDosarSedinta['sqlTemplate'], xsqlDosarSedinta['values'])
-      except sqlite3.Error as err:
-          print('err 176 ' + inputxmlz + ' sqlDosarSedinta Query Failed: %s\nError: %s' % (xsqlDosarSedinta['values'], str(err)))
+      sqlDosarSedinta = qiDosarSedinta(dosar, xnr, inputxmlz)
+      if sqlDosarSedinta:
+        try:
+          cursor.execute(sqlDosarSedinta)
+        except sqlite3.Error as err:
+            print('--err sqlDosarSedinta Query Failed: %s\nError: %s' % (sqlDosarSedinta, str(err)))
+            if debugging:
+              breakpoint()
 
-          if debugging:
-            breakpoint()
-      
+    if 'caiAtac' in dosar:
+      sqlCaleAtac = qiDosarCaiAtac(dosar, xnr, inputxmlz)
+      if sqlCaleAtac:
+        try:
+          cursor.execute(sqlCaleAtac)
+        except sqlite3.Error as err:
+          print('err 242 sqlCaleAtac Query Failed: %s\nError: %s' % (sqlCaleAtac, str(err)) + ' --> ' + xnr)
+
   conn.commit()
-  print('witten: ' + inputxmlz) 
+  print('--> ' + inputxmlz) 
+
 
 # loop all files in xmlgz, writhe to sqlite, move file
 
