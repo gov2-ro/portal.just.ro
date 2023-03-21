@@ -8,6 +8,7 @@ import glob, os
 import pandas as pd
 import csv
 import logging
+from tqdm import tqdm
 
 dbfile = "data/portal-just.db"
 csvinstante ="data/reference/instante.csv"
@@ -58,6 +59,8 @@ def qiDosarParte(ddosar, xid, fisier):
     for oparte in parti:
       if 'nume' not in oparte or oparte['nume'] == '':
         oparte['nume'] = ''
+      if 'calitateParte' not in oparte or oparte['calitateParte'] == '':
+        oparte['calitateParte'] = ''
       try:
         values += "(\"" + str(xid) + "\",\"" + oparte['nume'].replace('"','""') + "\",\"" + oparte['calitateParte'].replace('"','""') + "\"), "
       except Exception as e:
@@ -216,12 +219,9 @@ def xmltodb(inputxmlz, xdbfile):
       linkpjr = str(int(float(instanta['link just-ro'])))
     except: 
       linkpjr = '--na--'
-    
- 
 
-    if 'tip' not in instanta:
-        
-        errz.append(['221 xmltodb failed instanta[\'tip\']',inputxmlz,'','',''])
+    if 'tip' not in instanta:    
+        errz.append(['224 xmltodb failed instanta[\'tip\']',inputxmlz,'','',''])
         errCount += 1
         return None
 
@@ -229,6 +229,9 @@ def xmltodb(inputxmlz, xdbfile):
         errz.append(['226 xmltodb failed instanta[\'tip\']',inputxmlz,dosar['numar'],'',''])
         errCount += 1
         instanta['tip'] = '-n2-'
+
+    if len(instanta['tip']) == 0:
+      instanta['tip'] = 'na'
 
     try:
       znr = instanta['tip']+'-'+linkpjr+'_'+dosar['numar']
@@ -243,19 +246,20 @@ def xmltodb(inputxmlz, xdbfile):
       errCount += 1
       return None
 
-    if isinstance(znr,  pd.Series):
-      errz.append(['240 xmltodb zrn is panda series',inputxmlz,dosar['numar'],'zrn is pd.Series',znr.to_string()])
-      errCount += 1
-      return None
-
+    # if isinstance(znr,  pd.Series):
+    #   errz.append(['247 xmltodb zrn is panda series',inputxmlz,dosar['numar'],'zrn is pd.Series',znr.to_string()])
+    #   breakpoint()
+    #   errCount += 1
+    #   return None
+    
     try:
       xnr = znr.iloc[0] #gets data from df
     except Exception as e:
-      breakpoint()
+      # breakpoint()
       # print('ERR 141: failed at xnr zrn ' + inputxmlz + ' --> '+ str(e))
-      errz.append(['249 xmltodb failed at xnr',inputxmlz,znr,str(e),instanta['tip'] + "\n\r" +linkpjr + "\n\r" + dosar['numar']])
-      errCount += 1
-      return None
+      # errz.append(['258 xmltodb failed at xnr',inputxmlz,'',str(e),linkpjr + "\n\r" + dosar['numar']])
+      # errCount += 1
+      xnr = dosar['numar']
   
     sqlDosar = qiDosar(dosar, xnr, inputxmlz)
 
@@ -302,16 +306,18 @@ def xmltodb(inputxmlz, xdbfile):
           errCount += 1
 
   conn.commit()
-  print('--> ' + inputxmlz) 
+  tqdm.write('--> ' + inputxmlz) 
 
 
 # loop all files in xmlgz, writhe to sqlite, move file
 
 filez = [os.path.basename(x) for x in glob.glob(dir_xmlgz + "*.xml.gz")]
+pbar = tqdm(len(filez))
  
-for file in filez:
-  print('reading ' + dir_xmlgz + file)
+for file in tqdm(filez, desc="crunching files"):
+  tqdm.write('reading ' + dir_xmlgz + file)
   xmltodb(dir_xmlgz + file, dbfile)
+  pbar.update(1)
 
   # each errBuffer errors, save to file
   if errCount >= errBuffer:
@@ -324,12 +330,12 @@ for file in filez:
         # Write each row of the list of lists to the CSV file
         for row in errz:
             writer.writerow(row)
-        print ('-------- saved ' + str(errBuffer) + ' more errors')
+        tqdm.write ('-------- saved ' + str(errBuffer) + ' more errors')
     errCount = 0
     errz = []
   
   # move file
   os.rename(dir_xmlgz + file, dir_parsed + file)
-  print('written to sql: ' + file)
+  tqdm.write('written to sql: ' + file)
 
-print('>> DONE')
+tqdm.write('>> DONE')
