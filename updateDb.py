@@ -314,28 +314,23 @@ def xmltodb(inputxmlz, xdbfile):
 filez = [os.path.basename(x) for x in glob.glob(dir_xmlgz + "*.xml.gz")]
 pbar = tqdm(len(filez))
  
-for file in tqdm(filez, desc="crunching files"):
-  tqdm.write('reading ' + dir_xmlgz + file)
+for file in tqdm(filez, desc="xmlz>>"):
+  # tqdm.write('reading ' + dir_xmlgz + file)
   xmltodb(dir_xmlgz + file, dbfile)
   pbar.update(1)
 
   # each errBuffer errors, save to file
   if errCount >= errBuffer:
-    # Open the CSV file in write mode
     with open(errLogFile, mode='a', newline='') as errFile:
-
-        # Create a CSV writer object
         writer = csv.writer(errFile)
-
-        # Write each row of the list of lists to the CSV file
         for row in errz:
             writer.writerow(row)
-        tqdm.write ('-------- saved ' + str(errBuffer) + ' more errors')
+        # tqdm.write ('-------- saved ' + str(errBuffer) + ' more errors')
     errCount = 0
     errz = []
   
   # move file
   os.rename(dir_xmlgz + file, dir_parsed + file)
-  tqdm.write('written to sql: ' + file)
+  tqdm.write('db > ' + file)
 
 tqdm.write('>> DONE')
