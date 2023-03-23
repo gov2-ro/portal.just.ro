@@ -13,7 +13,38 @@ if instanta='all' or None, loop all instanțe then fetch dosare & ședințe filt
 - `fetchAPI.py <date> <days=1> <direction=back>` : fetches date + days in direction [back|fwd] – fetches 24h after date
 - `updateDb.py` : looks into xml folder, writes to db, moves to /parsed folder; also checks for dupes? – if dupe create log
 
-## Roadmap
+
+## SQL db schema + Prompts
+
+Given the following SQLite Database containing data about lawsuits archive with the following tables schema:
+
+- "trials" (id: TEXT, data: DATE, court: TEXT, category: TEXT, status: TEXT)
+- "parties" (trial_id: TEXT, name: TEXT, type: TEXT)
+- "appeals" (trial_id: TEXT, date: DATE, appealing_party: TEXT, type: TEXT)
+- "courts"  (name: TEXT, id: TEXT, county: TEXT, type: TEXT, parent: TEXT)
+
+Where we have the following relationships:
+
+- trial_id in parties and appeals tabbles is linked to the trials.id
+- courts.parent is the parent of the court, which is a value from courts.id
+- trials.court is one of the values from courts.id
+
+
+### stats
+
+- [] NLTK 
+
+
+# Roadmap
+
+## Stats / SQL
+
+- [] SQL stats - via GPT
+  - [] describe db schema
+
+## UI
+
+## Fetching
 
 ### v0.1
 - [x] fetch api ⟶ local xml
@@ -21,10 +52,10 @@ if instanta='all' or None, loop all instanțe then fetch dosare & ședințe filt
 
 ### v0.2
 - [x] prototype fetch ⟶ db sequence for 24h (1day)
-- [ ] add relationships (Dosar)
+- [x] add relationships (Dosar)
   - [x] DosarParte
-  - [ ] DosarSedinta
-  - [ ] DosarCaleAtac
+  - [x] DosarSedinta
+  - [x] DosarCaleAtac
 
 #### v0.25
 - [ ] sedinte
