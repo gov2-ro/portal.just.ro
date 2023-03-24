@@ -2,9 +2,9 @@ db_file = 'data/portal-just.db'
 sqlq = "SELECT soluţieSumar FROM DosarSedinta"
 output_csv = 'data/ngrams.csv'
 ignore_list = 'data/ignore_list.csv'
-min_words = 5
-max_words = 15
-no_results = 50
+min_words = 10
+max_words = 25
+no_results = 500
 
 import csv, time, sqlite3
 from collections import Counter

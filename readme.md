@@ -30,17 +30,17 @@ Where we have the following relationships:
 - trials.court is one of the values from courts.id
 
 
-### stats
 
-- [] NLTK 
 
 
 # Roadmap
 
 ## Stats / SQL
 
-- [] SQL stats - via GPT
-  - [] describe db schema
+- [ ] SQL stats - via GPT
+  - [x] describe db schema
+
+- [x] n-grams 
 
 ## UI
 
