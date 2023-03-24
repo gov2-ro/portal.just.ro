@@ -41,6 +41,8 @@ Where we have the following relationships:
   - [x] describe db schema
 
 - [x] n-grams 
+  - [x] cli script interactive (optional) parameters 
+  - [ ] scale it / divide the load? for bigger corpus
 
 ## UI
 

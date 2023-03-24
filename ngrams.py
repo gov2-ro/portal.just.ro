@@ -1,3 +1,7 @@
+import csv, time, sqlite3, os
+from collections import Counter
+import argparse
+
 db_file = 'data/portal-just.db'
 sqlq = "SELECT soluţieSumar FROM DosarSedinta"
 output_csv = 'data/ngrams.csv'
@@ -6,8 +10,31 @@ min_words = 10
 max_words = 25
 no_results = 500
 
-import csv, time, sqlite3
-from collections import Counter
+parser = argparse.ArgumentParser(description='does the ngram thing from db')
+parser.add_argument('-min', '--min_words', help='min words')
+parser.add_argument('-max', '--max_words', help='max words')
+parser.add_argument('-r', '--no_results', help='number of results')
+parser.add_argument('-i', '--ignore_list', help='ignore list')
+parser.add_argument('-o', '--output_csv', help='output csv')
+parser.add_argument('-db', '--database', help='input sqlite db file')
+parser.add_argument('-q', '--sql', help='query')
+
+args = parser.parse_args()
+
+if args.min_words:
+    min_words = int(args.min_words)
+if args.max_words:
+    max_words = int(args.max_words)
+if args.no_results:
+    no_results = int(args.no_results)
+if args.ignore_list:
+    ignore_list = args.ignore_list
+if args.output_csv:
+    output_csv = args.output_csv
+if args.database:
+    db_file = args.database
+if args.sql:
+    sqlq = args.sql
 
 def get_ngrams(text, min_words, max_words, ignore=None):
     words = text.split()
@@ -53,3 +80,5 @@ with open(output_csv, 'w', newline='') as f:
 
 print(">> DONE \n\r" + 'saved to ' + output_csv)
 print(f"Execution time: {end_time - start_time:.2f} seconds")
+
+os.system('say -v ioana "în sfârșit, am gătat" -r 250')
