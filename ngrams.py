@@ -1,7 +1,6 @@
-import csv, time, sqlite3, os, argparse
+import csv, time, sqlite3, os
 from collections import Counter
-from tqdm import tqdm
-
+import argparse
 
 db_file = 'data/portal-just.db'
 sqlq = "SELECT soluţieSumar FROM DosarSedinta"
@@ -10,7 +9,6 @@ ignore_list = 'data/ignore_list.csv'
 min_words = 10
 max_words = 25
 no_results = 500
-batch_size = 100
 
 parser = argparse.ArgumentParser(description='does the ngram thing from db')
 parser.add_argument('-min', '--min_words', help='min words')
@@ -46,25 +44,19 @@ def get_ngrams(text, min_words, max_words, ignore=None):
             ngram = " ".join(words[i:i+n])
             if ignore and ngram in ignore:
                 continue
-            # Only add the n-gram if it is the shortest n-gram for this sequence of words
-            is_shortest = all(ngram not in shorter for shorter in ngrams)
-            if is_shortest:
-                ngrams.append(ngram)
+            ngrams.append(ngram)
     return ngrams
 
 def get_most_common_ngrams(rows, k, ignore=None):
     text = " ".join(row[0] for row in rows)
+    print('1')
     ngrams = get_ngrams(text, min_words, max_words, ignore=ignore)
+    print('2')
     ngram_counts = Counter(ngrams)
-    # Filter out any n-grams that have the same count as a longer n-gram
-    for ngram, count in list(ngram_counts.items()):
-        if any(ngram in longer for longer in ngram_counts if len(longer) > len(ngram) and ngram_counts[longer] == count):
-            del ngram_counts[ngram]
     return ngram_counts.most_common(k)
 
 start_time = time.time()
-
-print('-> Most common [' + str(no_results) + '] ngrams between [' + str(min_words) + '] and [' + str(max_words) + '] words, ignoring [' + ignore_list + ']')
+print('-> Looking for most frequent [' + str(no_results) + '] ngrams between [' + str(min_words) + '] and [' + str(max_words) + '] words, ignoring the sets found in [' + ignore_list + ']')
 print('-> db: [' + db_file + ']')
 print('-> SQL: [' + sqlq + ']')
 
@@ -78,22 +70,10 @@ conn = sqlite3.connect(db_file)
 cur = conn.cursor()
 cur.execute(sqlq)
 rows = cur.fetchall()
-num_rows = len(rows)
-num_batches = (num_rows + batch_size - 1) // batch_size
-
-# most_common_ngrams = get_most_common_ngrams(rows, k=no_results, ignore=ignore)
-most_common_ngrams = Counter()
-
-for i in tqdm(range(num_batches)):
-    # Get a batch of rows to process
-    start = i * batch_size
-    end = min((i+1) * batch_size, num_rows)
-    batch_rows = rows[start:end]
-    # Get the most common n-grams for this batch
-    batch_ngrams = get_most_common_ngrams(batch_rows, k=no_results, ignore=ignore)
-    most_common_ngrams += Counter(dict(batch_ngrams))
+print('0')
+most_common_ngrams = get_most_common_ngrams(rows, k=no_results, ignore=ignore)
+print('3')
 end_time = time.time()
-
 
 with open(output_csv, 'w', newline='') as f:
     writer = csv.writer(f)
@@ -101,8 +81,7 @@ with open(output_csv, 'w', newline='') as f:
     for ngram, count in most_common_ngrams:
         writer.writerow([ngram, count])
 
-end_time = time.time()
-
 print(">> DONE \n\r" + 'saved to ' + output_csv)
 print(f"Execution time: {end_time - start_time:.2f} seconds")
+
 os.system('say -v ioana "în sfârșit, am gătat" -r 250')
