@@ -2,9 +2,9 @@ import csv, time, sqlite3, os
 from collections import Counter
 import argparse
 
-db_file = 'data/portal-just.db'
+db_file = 'data/portal-just-mini.db'
 sqlq = "SELECT soluţieSumar FROM DosarSedinta"
-output_csv = 'data/ngrams.csv'
+output_csv = 'data/processed/ngrams/ngrams.csv'
 ignore_list = 'data/ignore_list.csv'
 min_words = 10
 max_words = 25

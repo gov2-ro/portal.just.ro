@@ -1,25 +1,15 @@
-import sqlite3, os
+import os
+import sqlite3
 import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 import string
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.cluster import KMeans
+from sklearn.cluster import DBSCAN
+from sklearn.metrics.pairwise import cosine_similarity
 
-# ------------
 db_file = 'data/portal-just-mini.db'
-clusters = 25
-random_state=42
-output_dir = 'data/processed/kmeans/'
-# ------------
-
-print(str(clusters) + " clusters; random state = " + str(random_state))
-
-
-# Create output directory if it doesn't exist
-if not os.path.exists(output_dir):
-    os.makedirs(output_dir)
-
+output_dir = 'data/processed'
 
 nltk.download('stopwords')
 nltk.download('punkt')
@@ -31,8 +21,6 @@ conn = sqlite3.connect(db_file)
 cursor = conn.cursor()
 cursor.execute("SELECT soluţie || \": \" || soluţieSumar as meme FROM DosarSedinta")
 rows = cursor.fetchall()
-
-print(str(len(rows)) + " rows in " + db_file)
 
 # Clean and preprocess the text data
 stop_words = set(stopwords.words('romanian'))
@@ -46,27 +34,33 @@ def preprocess_text(text):
 
 preprocessed_rows = [preprocess_text(row[0]) for row in rows]
 
-# Use K-Means clustering algorithm to group the preprocessed text data into clusters based on their similarity
+# Use DBSCAN clustering algorithm to group the preprocessed text data into clusters based on their similarity
 vectorizer = TfidfVectorizer()
 X = vectorizer.fit_transform(preprocessed_rows)
 
-kmeans = KMeans(n_clusters=clusters, random_state = random_state)
-kmeans.fit(X)
+cosine_sim = cosine_similarity(X)
 
-labels = kmeans.labels_
+dbscan = DBSCAN(eps=0.5, min_samples=3, metric='precomputed')
+dbscan.fit(cosine_sim)
 
-# Write the clusters and the corresponding text data to separate files
+labels = dbscan.labels_
+
+# Create the 'data/processed' folder if it doesn't exist
+if not os.path.exists('data/processed'):
+    os.makedirs('data/processed')
+
+# Write the clusters and the corresponding text data to separate files inside the 'data/processed' folder
 for i in range(len(set(labels))):
-    # cluster_file = f"data/processed/kmeans/cluster_{i}.txt"
+    # cluster_file = f"data/processed/cluster_{i}.txt"
     cluster_file = os.path.join(output_dir, f"cluster_{i}.txt")
     print ("-cluster: " + str(i))
-    count_total = 0
     with open(cluster_file, "w", encoding="utf-8") as f:
         for j in range(len(preprocessed_rows)):
             if labels[j] == i:
-                count_total += 1
                 count = sum([1 for l in labels if l == i])
-                f.write(rows[j][0] + f"\n--\n")
-        f.write(f"\n\r----- >>  Number of occurrenceszzz: {count_total}\n")
-        print ("-- cstr: " + str(i))
+                # f.write(f"Cluster {i} (Number of occurrences: {count})\n")
+                f.write(rows[j][0] + "\n")
+                f.write("--------\n")
+    print (" --c: " + str(i))
+# Close the connection to the SQLite database
 conn.close()
