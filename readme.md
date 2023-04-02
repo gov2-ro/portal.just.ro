@@ -29,9 +29,7 @@ Where we have the following relationships:
 - courts.parent is the parent of the court, which is a value from courts.id
 - trials.court is one of the values from courts.id
 
-
-
-
+-----
 
 # Roadmap
 
@@ -40,9 +38,14 @@ Where we have the following relationships:
 - [ ] SQL stats - via GPT
   - [x] describe db schema
 
-- [x] n-grams 
-  - [x] cli script interactive (optional) parameters 
-  - [ ] scale it / divide the load? for bigger corpus
+- [ ] NLP-ish categorisation, clustering
+  - [x] n-grams 
+    - [x] cli script interactive (optional) parameters 
+  - [x] k-means
+  - [ ] manual definition, recipes
+  - [ ] entity detection, semantics
+
+-----
 
 ## UI
 
@@ -79,3 +82,9 @@ Where we have the following relationships:
 
 ### v0.5
 - [ ] nosql db
+
+-----
+
+## NLP-ish
+
+![nlp-ish](reference/portaljust.ro-flow.svg)
