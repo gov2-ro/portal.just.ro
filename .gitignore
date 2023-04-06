@@ -8,3 +8,4 @@ _obsolete
 !/data/datasette/
 
 /data/cached-responses/*
+/testbench/
