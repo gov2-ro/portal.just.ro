@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+    
+
+{% set rows = sql("""
+select * from DosarParte where xnumardosar = :docid
+""", {"docid": docid}, database="portal-just-sample")
+%}
+
+ 
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+     {% include "_head-scripts.html" %}
+</head>
+-----
+
+
+{% for row in rows %}
+    {% for key in row.keys() %}
+        {{ key }}: {{ row[key] }}<br>
+    {% endfor %}<hr>
+{% endfor %}
+
+
+-----
+
+
+
+{{docid}}
