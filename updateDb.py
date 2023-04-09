@@ -1,13 +1,8 @@
-import xmltodict
-import gzip
-import json
+import xmltodict, gzip, json, sqlite3, glob, os,  csv, logging
+from slugify import slugify
 from icecream import ic
 import pandas as pd
-import sqlite3
-import glob, os
 import pandas as pd
-import csv
-import logging
 from tqdm import tqdm
 
 dbfile = "data/portal-just.db"
@@ -218,7 +213,7 @@ def xmltodb(inputxmlz, xdbfile):
     try:
       linkpjr = str(int(float(instanta['link just-ro'])))
     except: 
-      linkpjr = '--na--'
+      linkpjr = '-nai-'
 
     if 'tip' not in instanta:    
         errz.append(['224 xmltodb failed instanta[\'tip\']',inputxmlz,'','',''])
@@ -234,7 +229,7 @@ def xmltodb(inputxmlz, xdbfile):
       instanta['tip'] = 'na'
 
     try:
-      znr = instanta['tip']+'-'+linkpjr+'_'+dosar['numar']
+      znr = instanta['tip']+'-'+linkpjr+'_'+slugify(dosar['numar'])
     except Exception as e:
       breakpoint()
       errz.append(['220 xmltodb failed at zrn',inputxmlz,dosar['numar'],str(e),''])

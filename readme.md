@@ -38,16 +38,26 @@ Where we have the following relationships:
 - [ ] SQL stats - via GPT
   - [x] describe db schema
 
-- [ ] NLP-ish categorisation, clustering
+## NLP-ish
+
+categorisation, clustering, entity extraction
+
   - [x] n-grams 
     - [x] cli script interactive (optional) parameters 
   - [x] k-means
   - [ ] manual definition, recipes
   - [ ] entity detection, semantics
 
+
 -----
 
 ## UI
+### Datasette
+
+- [ ] Datasette Template
+- [ ] Dashboards
+- [ ] Search
+
 
 ## Fetching
 
@@ -61,6 +71,10 @@ Where we have the following relationships:
   - [x] DosarParte
   - [x] DosarSedinta
   - [x] DosarCaleAtac
+
+
+
+
 
 #### v0.25
 - [ ] sedinte
