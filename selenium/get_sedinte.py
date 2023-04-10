@@ -1,6 +1,6 @@
 import time, sqlite3, csv, os, sys
 from urllib.parse import urlparse, parse_qs
-from datetime import datetime
+import datetime
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -9,16 +9,28 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-
-
-dbfile = '../data/just-scraping.db'
-zitable = 'lista-sedinte'
-
 """ 
 for a list of instanțe,
 loop days (excl weekends)
 save nr sedinte to SQLite
+
+TODO: save to sql more often, on each instanta? or.. make smaller batches?
+TODO: make it resilient to errors!
+
+TODO: how to stop when there's no sedinte? 
+"Nu există nici o şedinţă." la câteva la rând?
+
  """
+
+dbfile = '../data/just-scraping.db'
+zitable = 'lista-sedinte'
+# instante = [36,3,197]
+instante = [197, 338, 3, 98]
+instante = [197, 338]
+ 
+start_date = '2022-3-01'
+end_date = '2022-3-05'
+
 
 def setup_method():
     driver = webdriver.Firefox()
@@ -32,6 +44,7 @@ def get_date(driver, url, date):
     data = []
     next_page = 1 #read data table at least once.
     next_img_element = None
+    
     # Wait for up to 10 seconds for the element to be present in the DOM
     wait = WebDriverWait(driver, 10)
 
@@ -53,6 +66,14 @@ def get_date(driver, url, date):
         time.sleep(.75)
         qdata_table = "//div[@id='WebPartWPQ3']//table[1]"
         qnext_table = "//div[@id='WebPartWPQ3']//table[2]"
+
+         # check if ședințe, if not, skip.
+        try:
+           element = driver.find_element(By.XPATH, "//table[@class='s4-wpTopTable']//td[@class='ms-vb' and text()='Nu există nici o şedinţă.']")
+           print('no sedinta for ' + date + url)
+           return None
+        except NoSuchElementException:
+            pass
 
         # check if data table exists
         try:
@@ -77,6 +98,7 @@ def get_date(driver, url, date):
             next_img_element = last_a_element.find_elements(By.XPATH, ".//img[@src='/_layouts/images/next.gif'][@alt='Next']")
   
         else:
+            print('stop next page')
             next_page = 0
         # Check if there are any 'a' elements and if the last one contains the specified image
         # if a_elements and a_elements[-1].find_element(By.XPATH, ".//img[@src='/_layouts/images/next.gif'][@alt='Next']"):
@@ -89,9 +111,8 @@ def get_date(driver, url, date):
     
         # table_rows = driver.find_elements_by_xpath('//table/tbody/tr')
         table_rows = data_table.find_elements(By.TAG_NAME, "tr")
- 
-       
 
+        # collect the data
         for row in table_rows:
             cols = row.find_elements(By.XPATH, './/td')
             if cols:
@@ -108,41 +129,71 @@ def get_date(driver, url, date):
                 #     row_data['complet_href'] = links[0].get_attribute('href')
                 data.append(row_data)
 
-        if next_img_element is not None:
+        if next_img_element is not None and len(next_img_element):
+    
             last_a_element.click()
-            print('clicked next')
+            # print('clicked next')
             # TODO: wait untill element arrives
             time.sleep(1.1)
         else:
             next_page = 0  
     
-    print('finished loop')
+    print('_____')
     return data
+
+
+def generate_dates(start_date_str, end_date_str):
+    # Convert the start and end date strings to date objects
+    start_date = datetime.datetime.strptime(start_date_str, '%Y-%m-%d').date()
+    end_date = datetime.datetime.strptime(end_date_str, '%Y-%m-%d').date()
+
+    # Define a function to check if a date is a weekend
+    def is_weekend(date):
+        return date.weekday() in [5, 6]  # 5 is Saturday and 6 is Sunday
+
+    # Generate the list of dates, excluding weekends, and format them
+    date_list = [
+        (start_date + datetime.timedelta(days=x)).strftime('%d.%m.%Y')
+        for x in range((end_date - start_date).days + 1)
+        if not is_weekend(start_date + datetime.timedelta(days=x))
+    ]
+
+    return date_list
+
+# def sedinte_instanta(id_instanta, zidate, driver):
+#     driver = setup_method()
+#     tdata = get_date(driver, "https://portal.just.ro/" + str(id_instanta) + "/SitePages/Lista_Sedinte.aspx?id_inst=179", zidate)
+#     return tdata
 
 
 if not os.access(dbfile, os.F_OK | os.W_OK):
     print("Database file does not exist or is not writable: " + dbfile)
     sys.exit(1) # Exit the script with error code 1
 
+ 
+zirows = []
+zidates = generate_dates(start_date, end_date)
 driver = setup_method()
 
-id_instanta = 179
-zidate = "17.03.2021"
+
+for id_instanta in instante:
+    print('--instanta ' + str(id_instanta))
+    for zidate in zidates:
+        # breakpoint()
+        print('---data: ' + str(zidate))
+        newmeat = get_date(driver, "https://portal.just.ro/" + str(id_instanta) + "/SitePages/Lista_Sedinte.aspx?id_inst="  + str(id_instanta), zidate)
+        if newmeat:
+            zirows.extend(newmeat)
+
 
 # tdata = get_date(driver, "https://portal.just.ro/3/SitePages/Lista_Sedinte.aspx?id_inst=3", "08.03.2023")
-tdata = get_date(driver, "https://portal.just.ro/" + str(id_instanta) + "/SitePages/Lista_Sedinte.aspx?id_inst=179", zidate)
-
-
 
 conn = sqlite3.connect(dbfile)
 c = conn.cursor()
 c.execute('CREATE TABLE IF NOT EXISTS "' + zitable + '" (institutie int, zi text, departament text, complet text, ora text, idx text)')
 
-# for row in tdata:
-#     c.execute("INSERT INTO ' + zitable + ' VALUES (:departament, :complet, :ora, :idx)", row)
-    
-for row in tdata:
-    date_obj = datetime.strptime(zidate, '%d.%m.%Y')
+for row in zirows:
+    date_obj = datetime.datetime.strptime(zidate, '%Y.%m.%d')
     c.execute("INSERT INTO \"" + zitable + "\" (departament, complet, ora, idx, institutie, zi) VALUES (:departament, :complet, :ora, :idx, :institutie, :zi)", {
         'departament': row['departament'],
         'complet': row['complet'],
@@ -156,7 +207,7 @@ for row in tdata:
 conn.commit()
 conn.close()
 
-breakpoint()
+print('saved to db')
 teardown_method(driver)
 
 

@@ -5,6 +5,7 @@
 _obsolete
 */geckodriver.log
 geckodriver.log
+selenium/geckodriver.log
 !/data/reference/
 !/data/cached-responses/
 !/data/datasette/
