@@ -3,6 +3,8 @@
 *.code-workspace
 */_obsolete
 _obsolete
+*/geckodriver.log
+geckodriver.log
 !/data/reference/
 !/data/cached-responses/
 !/data/datasette/
