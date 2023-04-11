@@ -1,7 +1,6 @@
 import time, sqlite3, csv, os, sys
 from urllib.parse import urlparse, parse_qs
 import datetime
-
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -20,17 +19,18 @@ TODO: make it resilient to errors!
 TODO: how to stop when there's no sedinte? 
 "Nu există nici o şedinţă." la câteva la rând?
 
+TODO: catch <span class="ms-error">Trebuie introdusă o valoare pentru acest filtru.</span>
+
  """
 
 dbfile = '../data/just-scraping.db'
 zitable = 'lista-sedinte'
 # instante = [36,3,197]
-instante = [197, 338, 3, 98]
-instante = [197, 338]
+# instante = [197, 338, 3, 98]
+instante = [57,107,175,176,191,203,298,97,195,221,240,243,272,278,85,174,257,294,306,787,32,110,180,199,260,270,829,103,188,279,291,321,64,62,1372,197,226,293,338,119,248,305,322,2,81,3,753,92,299,300,301,4,302,303,116,202,249,269,98,229,312,330,122,192,236,93,94,1748,87,292,329,335,339,740,33,112,186,190,265,117,752,1285,211,219,235,242,328,100,182,224,307,319,336,84,309,337,1752,36,118,212,254,256,842,88,179,253,327,54,63,183,201,215,230,304,95,263,267,317,318,101,181,225,274,313,332,104,184,207,213,311,44,113,196,228,247,121,233,316,324,838,91,173,231,275,45,99,739,866,239,245,286,89,189,244,333,35,111,177,187,255,271,833,83,218,266,46,109,1259,205,214,216,280,828,90,185,198,223,241,42,114,200,277,282,287,105,204,259,281,310,331,120,232,262,283,284,315,39,40,193,217,222,297,86,206,227,237,285,314,334,43,96,234,258,268,326,102,1371,251,289,308,320,323,59,108,210,238,246,250,55,115,208,261,273,290,751,30,832,220,252,295,325]
  
-start_date = '2022-3-01'
-end_date = '2022-3-05'
-
+start_date = '2023-3-01'
+end_date = '2023-3-31'
 
 def setup_method():
     driver = webdriver.Firefox()
@@ -39,7 +39,7 @@ def setup_method():
 def teardown_method(driver):
     driver.quit()
 
-def get_date(driver, url, date):
+def get_date(driver, id_instanta, date, conn, zitable):
     zpath = "//div[@id='MSO_ContentTable']//div[@id='WebPartWPQ2']//table//td[contains(@class,'ms-dtinput')]//input[contains(@class,'ms-input')]"
     data = []
     next_page = 1 #read data table at least once.
@@ -47,8 +47,8 @@ def get_date(driver, url, date):
     
     # Wait for up to 10 seconds for the element to be present in the DOM
     wait = WebDriverWait(driver, 10)
-
-    driver.get(url)
+    url = "https://portal.just.ro/" + str(id_instanta) + "/SitePages/Lista_Sedinte.aspx?id_inst="  + str(id_instanta)
+    driver.get(url) #TODO: what to do on 404?
     input_field = driver.find_element(By.XPATH, zpath)
     input_field.clear()
     time.sleep(.3)
@@ -57,9 +57,7 @@ def get_date(driver, url, date):
     time.sleep(.3)
     input_field.send_keys(Keys.RETURN)
     
-    
-    # TODO: wait untill element arrives
- 
+    c = conn.cursor()
     
     while next_page == 1:
          # TODO: wait untill element arrives
@@ -100,16 +98,7 @@ def get_date(driver, url, date):
         else:
             print('stop next page')
             next_page = 0
-        # Check if there are any 'a' elements and if the last one contains the specified image
-        # if a_elements and a_elements[-1].find_element(By.XPATH, ".//img[@src='/_layouts/images/next.gif'][@alt='Next']"):
-        #     # print("Last 'a' element contains the specified image.")
-        #     next_page = 1
-        # else:
-        #     # print("No 'a' elements or last 'a' element does not contain the specified image.")
-        #     next_page = 0
 
-    
-        # table_rows = driver.find_elements_by_xpath('//table/tbody/tr')
         table_rows = data_table.find_elements(By.TAG_NAME, "tr")
 
         # collect the data
@@ -117,29 +106,38 @@ def get_date(driver, url, date):
             cols = row.find_elements(By.XPATH, './/td')
             if cols:
                 row_data = {'departament': cols[0].text, 'complet': cols[1].text, 'ora': cols[2].text}
-                # links = cols[0].find_elementss_by_xpath('.//a')
                 links = cols[0].find_elements(By.XPATH, './/a')
                 if links:
                     parsed_url = urlparse(links[0].get_attribute('href'))
                     query_params = parse_qs(parsed_url.query)
                     row_data['idx'] = query_params['id_sedinta'][0]
-                # links = cols[1].find_elementss_by_xpath('.//a')
-                # links = cols[1].find_elements(By.XPATH, './/a')
-                # if links:
-                #     row_data['complet_href'] = links[0].get_attribute('href')
+
+                row_data['zi'] = date
+                row_data['institutie'] = id_instanta
                 data.append(row_data)
 
-        if next_img_element is not None and len(next_img_element):
-    
+        if next_img_element is not None and len(next_img_element):    
             last_a_element.click()
-            # print('clicked next')
             # TODO: wait untill element arrives
             time.sleep(1.1)
         else:
             next_page = 0  
     
-    print('_____')
-    return data
+    for row in data:
+        date_obj = datetime.datetime.strptime(zidate, '%d.%m.%Y') 
+        c.execute("INSERT INTO \"" + zitable + "\" (departament, complet, ora, sedinta, institutie, zi) VALUES (:departament, :complet, :ora, :sedinta, :institutie, :zi)", {
+            'departament': row['departament'],
+            'complet': row['complet'],
+            'ora': row['ora'],
+            'sedinta': row['idx'],
+            'institutie': id_instanta,  
+                'zi': date_obj.date().isoformat()  
+            })   
+
+    conn.commit()
+    print('\_/\_/')
+
+    return None
 
 
 def generate_dates(start_date_str, end_date_str):
@@ -160,54 +158,30 @@ def generate_dates(start_date_str, end_date_str):
 
     return date_list
 
-# def sedinte_instanta(id_instanta, zidate, driver):
-#     driver = setup_method()
-#     tdata = get_date(driver, "https://portal.just.ro/" + str(id_instanta) + "/SitePages/Lista_Sedinte.aspx?id_inst=179", zidate)
-#     return tdata
-
-
 if not os.access(dbfile, os.F_OK | os.W_OK):
     print("Database file does not exist or is not writable: " + dbfile)
     sys.exit(1) # Exit the script with error code 1
-
  
 zirows = []
 zidates = generate_dates(start_date, end_date)
 driver = setup_method()
-
+conn = sqlite3.connect(dbfile)
+c = conn.cursor()
+c.execute('CREATE TABLE IF NOT EXISTS "' + zitable + '" (institutie int, zi text, departament text, complet text, ora text, sedinta int)')
 
 for id_instanta in instante:
     print('--instanta ' + str(id_instanta))
     for zidate in zidates:
         # breakpoint()
         print('---data: ' + str(zidate))
-        newmeat = get_date(driver, "https://portal.just.ro/" + str(id_instanta) + "/SitePages/Lista_Sedinte.aspx?id_inst="  + str(id_instanta), zidate)
-        if newmeat:
-            zirows.extend(newmeat)
-
-
+        get_date(driver, id_instanta, zidate, conn, zitable)
+    
+conn.close()
 # tdata = get_date(driver, "https://portal.just.ro/3/SitePages/Lista_Sedinte.aspx?id_inst=3", "08.03.2023")
 
-conn = sqlite3.connect(dbfile)
-c = conn.cursor()
-c.execute('CREATE TABLE IF NOT EXISTS "' + zitable + '" (institutie int, zi text, departament text, complet text, ora text, idx text)')
+os.system('say "all Done"')
 
-for row in zirows:
-    date_obj = datetime.datetime.strptime(zidate, '%Y.%m.%d')
-    c.execute("INSERT INTO \"" + zitable + "\" (departament, complet, ora, idx, institutie, zi) VALUES (:departament, :complet, :ora, :idx, :institutie, :zi)", {
-        'departament': row['departament'],
-        'complet': row['complet'],
-        'ora': row['ora'],
-        'idx': row['idx'],
-        'institutie': id_instanta,  
-        'zi': date_obj.date().isoformat()  
-    })
-
-
-conn.commit()
-conn.close()
-
-print('saved to db')
+# print('saved to db')
 teardown_method(driver)
 
 
